@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+<html>
+	<head lang="en">
+		<script src="http://ajax.googleapis.com/ajax/libs/jquery/1.11.2/jquery.min.js"></script>
+
+		<title>Intelligent Website</title>
+		<meta name="description" content="Int web.">
+        
+		<!-- Mobile viewport optimized -->
+		<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+        
+		<!-- Bootstrap CSS -->
+		<link href="boot/bootstrap.min.css" rel="stylesheet">
+		<link href="boot/bootstrap.css" rel="stylesheet">
+		<link href="boot/style.css" rel="stylesheet">
+        
+		<!-- Include Modernizr in the head, before any other Javascript -->
+		<script src="boot/modernizr-2.6.2.min.js"></script>
+		<script src="/socket.io/socket.io.js"></script>  
+		
+		<!-- Google maps script -->
+		<script type="text/javascript" src="https://maps.googleapis.com/maps/api/js?key=AIzaSyCj_F-T3GOnu7bBXprp3A_xnydekd2e9oo&sensor=false"></script>
+		
+	</head>
+	<body>
+		<div class="container-fluid">
+			<div class="row">
+				<!-- centre container -->
+				<div class="col-xs-12 col-lg-6 col-lg-push-6">
+					<div id="c1" class="container">
+						<legend>Footy Finder</legend>            
+						<form id="myForm" onsubmit="return false;">
+
+							<!-- Text input -->
+							<div class="form-group">
+								<label class="col-md-4 control-label" for="textinput">Team Name</label>  
+								<div class="col-md-4">
+									<input id="textinput" name="teamName" type="text" 
+										placeholder="Enter Team Twitter Name" class="form-control input-md">
+								</div>
+							</div>
+
+							<!-- Radios -->
+							<div class="form-group">
+								<label class="col-md-4 control-label" for="AO">And / Or</label>
+								<div class="col-md-4"> 
+									<label class="radio-inline" for="AO-0">
+										<input type="radio" name="AO" id="AO-0" value="And" checked="checked">
+										And
+									</label> 
+									<label class="radio-inline" for="AO-1">
+										<input type="radio" name="AO" id="AO-1" value="Or">
+										Or
+									</label>
+								</div>
+							</div>
+
+							<!-- Search Hash-->
+							<div class="form-group">
+								<label class="col-md-4 control-label" for="hash">Hashtags</label>
+								<div class="col-md-4">
+									<input id="hash" name="hashtag" type="search" 
+												placeholder="Hashtags" class="form-control input-md">                
+								</div>
+							</div>
+							
+							<!-- Search Key-->
+							<div class="form-group">
+								<label class="col-md-4 control-label" for="Key">Keywords</label>
+								<div class="col-md-4">
+									<input id="Key" name="keyword" type="search" 
+											placeholder="Keywords" class="form-control input-md">
+                
+								</div>
+							</div>
+
+							<!-- Button -->
+							<div class="form-group">
+								<label class="col-md-4 control-label" for="search"></label>
+								<div class="col-md-4">
+									<button id="sendButton" class="btn btn-primary">Search</button>
+								</div>
+							</div>
+						</form>
+					<div id="twitterFeed" class="grid">
+				</div>
+			</div>
+        </div>
+       
+		<!-- Map container -->
+		<div class="col-lg-3 row">
+			<div class="col-lg-12 span6">
+				<div id="gmap" class="container">
+					<legend>Geolocations</legend>
+					<div>
+						<h5 id="textcol" >Locations of tweets</h5>
+						<div id="map-canvas" style="margin:0 auto;"/></div>
+					</div>
+				</div>
+			</div>
+			
+			<div class="col-lg-12 span6">
+				<div id="gmap" class="container">
+					<legend>Trendings</legend>
+					<div>
+						<h5 id="textcol">Most 20 frequent words</h5>
+						<div id="trending-canvas" style="margin:0 auto;"/></div>
+					</div>
+				</div>
+			</div>
+
+
+		</div>
+		
+
+       <!-- streaming container -->
+        <div class="col-lg-3">
+            <div id="stream" class="container">
+              <legend>Stream</legend>
+                <div id="twitterStream" class="grid">
+
+                </div>
+            </div>
+        </div>
+		
+    </div>
+</div>
+
+<script>
+	/**
+		*Sends html (client) forms and retrieve stored tweets from database
+		*@param url		string    	the url to host on
+		*@param data	JSON		This is a array of json objects
+	*/
+    function sendAjaxQuery(url, data) {
+        $.ajax({
+            type: 'POST', 				//TYPF OF REQUEST
+            url: 'postFile.html', 		 //WHERE THE REQUEST SENT TO
+            data: data,  				//DATA SENT
+            success: function (data) {
+                alert('success '+data);
+
+                var text = '';
+                var len = data.length;
+                var file = '';
+                var coords = [];
+				
+				//string of all text
+				var text_string = '';
+              
+				/**
+					*Checks if the tweet has geo located coordinates and retrieves the
+					*values from the json object to put on the html page
+					*@param callback	Object	waits for the coords and text before continuing
+				*/
+				function checkCoords(callback) {
+					for(var i=0; i<len; i++) {
+						file=data[i];
+						text_string = text_string+' '+file.text;  
+						if (file.coordinates != null) {
+							coords.push(file.coordinates.coordinates);                    
+						}	
+						text +='<div class="grid-item grid-iitem--width3"><div><a href="https://twitter.com/'+ file.user.screen_name+'"><img src = "' + file.user.profile_image_url_https +'"/><b id="cname">' + file.user.name+ '</b><span id="scrn">  @'+ file.user.screen_name + '<span></a></div><div><p id="content">' + file.text + '</p><div><time>' + file.created_at + '</time></div></div></div>'
+					}
+					callback(coords, text);
+				}
+
+				/** 
+					*The function appends the tweets to div with id twitterFeed
+						allowing the tweets to be displayed on the page
+					*@param coords	Array 	contains an array of all the coordinates to be set as markers
+					*@param text   	String	Contains all of the tweets in the correct format so that
+                        when they are appended to the div they will display correctly
+				*/
+				function await(coords, text){
+					google.maps.event.addDomListener(window, 'load', initialize(coords));                
+					$('#twitterFeed').html(text);
+				}
+				
+				/**
+					*return an array of the most 20 frequent words
+					*@param string	string  	string consists of all tweets text
+				*/
+				function countFreq(string){
+					var clean_text_string = string.replace(/[\.,-\/#!$%\^&\*;:{}=\-_`~()]/g,"");
+					var words = clean_text_string.split(' ');
+					freq = {}; //globaly once invoked
+					for (var i in words){
+						freq[words[i]] = freq[words[i]] || 0;
+						freq[words[i]]++;
+					}
+					word_list = Object.keys(freq);
+					word_list.sort(function (a,b) {return freq[b]-freq[a];});
+					return word_list.slice(0,20);
+				}
+				
+				/**
+					*render the html <div> displaying the most 20 frequent words
+					*@param arr		array  	array of the most 20 frequent words
+				*/
+				function displayWords(arr){
+					//document.getElementById("trending-canvas");
+					var html = '<table>';
+					for (var i in arr){
+						html = html + '<tr><td>'+arr[i]+'</td><td>'+ freq[arr[i]]+'</td></tr>';					
+					}
+					html = html + '</table>';
+					document.getElementById("trending-canvas").innerHTML = html;
+				}
+
+				checkCoords(await);
+				
+				displayWords(countFreq(text_string));
+                // To add the marker to the map, use the 'map' property
+
+                //$(".twitter-grid").append(data);
+                var struct= JSON.parse(data);
+				
+				
+				var board = document.getElementById("trending-canvas");
+				
+            },
+            error: function (xhr, status, error) {
+                console.log('Error: ' + error.message);
+				alert('error connecting');
+            }
+        });
+    }
+
+    $.fn.serializeObject = function () {
+        var o = {};
+        var a = this.serializeArray();
+        $.each(a, function () {
+            if (o[this.name] !== undefined) {
+                if (!o[this.name].push) {
+                    o[this.name] = [o[this.name]];
+                }
+                o[this.name].push(this.value || '');
+            } else {
+                o[this.name] = this.value || '';
+            }
+        });
+        return o;
+    };
+
+	/**
+		*Retrieves the form values from the html page and submits them to the server through ajax
+	*/
+    function sendData() {
+        var form = document.getElementById('myForm');
+        sendAjaxQuery('http://localhost:3000/', JSON.stringify($('form').serializeObject()));
+    }
+
+    var sendButton = document.getElementById('sendButton');
+    sendButton.onclick = sendData;
+
+
+	/**  
+		*nitialize creates a map on the web page with all of the markers
+					from twitter coordinates if they have coordinates. 
+		*@param coords		array   this is an array of coordinates from the tweets that 
+					are used to plot the markers
+	*/
+	function initialize(coords) {
+		var myOptions = {
+			zoom: 0,
+			center: new google.maps.LatLng(-28.643387, 153.612224),
+			mapTypeId: google.maps.MapTypeId.ROADMAP,
+			mapTypeControl: true,
+			mapTypeControlOptions: {
+				style: google.maps.MapTypeControlStyle.HORIZONTAL_BAR,
+				position: google.maps.ControlPosition.BOTTOM_CENTER
+			},
+			panControl: true,
+			panControlOptions: {
+				position: google.maps.ControlPosition.TOP_RIGHT
+			},
+			zoomControl: true,
+			zoomControlOptions: {
+				style: google.maps.ZoomControlStyle.LARGE,
+				position: google.maps.ControlPosition.LEFT_CENTER
+			},
+			scaleControl: true,
+			scaleControlOptions: {
+				position: google.maps.ControlPosition.TOP_LEFT
+			},
+			streetViewControl: true,
+			streetViewControlOptions: {
+				position: google.maps.ControlPosition.LEFT_TOP
+			}
+		}
+
+		var map = new google.maps.Map(document.getElementById("map-canvas"), myOptions);
+
+		for(var i=0; i<coords.length; i++) {
+			var c = coords[i];
+			var marker = new google.maps.Marker({
+				position: new google.maps.LatLng(c[1],c[0]),
+				map: map,
+				title:"Hello World!"
+			});
+		}
+	}
+	
+	
+	/**  
+		This is the receiving socket connecting to the server
+			it prepends the data from the tweets into the twitterStream div 
+    */
+    var socket = io.connect('http://localhost:3000',{'force new connection' : true }); 
+
+    socket.on('stream', function(tweet){
+          //alert(tweet.text);   
+          $("#twitterStream").prepend('<div id="tStream" class="grid-item grid-item--width3"><div><a href="https://twitter.com/'+ tweet.user.screen_name+'"><img src = "' + tweet.user.profile_image_url_https +'"/><b id="cname">' + tweet.user.name+ '</b><span id="scrn">  @'+ tweet.user.screen_name + '<span></a></div><div><p id="content">' + tweet.text + '</p><div><time>' + tweet.created_at + '</time></div></div></div>'); 
+    });
+
+</script>
+</body>
+</html>

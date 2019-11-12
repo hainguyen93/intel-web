@@ -1,0 +1,108 @@
+html { 
+	background: url(football.jpg) no-repeat center center fixed; 
+	-webkit-background-size: cover;
+	-moz-background-size: cover;
+	-o-background-size: cover;
+	background-size: cover;
+}
+
+#c1 {
+	width: 90%;
+	padding: 10px;
+	margin-top: 50px;
+	background-color: #31A231;
+}
+
+#map-canvas {
+	width: gmap.width;
+	height: 300px;
+}
+#gmap {
+	width: 100%;
+	padding: 10px;
+	margin-top: 50px;
+	background-color: #31A231;
+}
+
+legend {
+	color:white;
+}
+
+#textcol {
+	color:white;
+}
+
+#trending-canvas {
+	color:white;
+}
+#stream {
+	width: 100%;
+	padding: 10px;
+	margin-top: 50px;
+	margin-right: 10px;
+	background-color: #31A231;	
+	border-radius: 5px;
+}
+#twitterFeed {
+	background-color: white;
+	overflow-y:scroll;
+	overflow-x:hidden;
+	height:400px;
+}
+
+.grid-item {
+	width:100%;
+	height:40%;
+	padding: 5px;
+	float: left;
+	background: white;
+	border: 2px solid;
+	border-colour:hsla(85,84%,25%,0.2);
+	border-radius:5px;
+}
+
+#twitterStream {
+	overflow-y:scroll;
+	overflow-x:hidden;
+	height:500px;
+}
+#tStream {
+	display: inline-block;
+	font-family: "Helvetica Neue", Roboto, "Segoe UI", Calibri, sans-serif;
+	font-size: 12px;
+	font-weight: bold;
+	line-height: 16px;
+	border-color: #eee #ddd #bbb;
+	border-radius: 5px;
+	border-style: solid;
+	border-width: 1px;
+	box-shadow: 0 1px 3px rgba(0, 0, 0, 0.15);
+	max-width: 468px;
+	width:90%;
+	height:30%;
+	padding: 5px;
+	float: left;
+	background: white;
+	border: 2px solid;
+	border-colour:hsla(85,84%,25%,0.2);
+	border-radius:5px;
+}
+
+time {
+	color: gray;
+}
+
+#scrn {
+	font-size: 5;
+}
+
+#content {
+	font-size: 11;
+}
+
+#cname {
+	color: black;
+}
+body {
+	background-color: transparent;
+}
